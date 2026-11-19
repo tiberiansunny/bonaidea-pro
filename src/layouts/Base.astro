@@ -1,0 +1,90 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import '@fontsource/space-grotesk/500.css';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '../styles/global.css';
+import Mark from '../components/Mark.astro';
+
+interface Props { title?: string; description?: string; }
+const {
+  title = 'Bonaidea — Motion design for SaaS, built in code',
+  description = 'Product promo videos and ad variants for SaaS teams. Motion design built in code: consistent, fast to iterate, ready in every format.',
+} = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const path = Astro.url.pathname;
+const nav = [
+  { href: '/work/', label: 'Work' },
+  { href: '/services/', label: 'Services' },
+  { href: '/contact/', label: 'Contact' },
+];
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonical} />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="theme-color" content="#0B0B0F" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonical} />
+  <meta name="twitter:card" content="summary_large_image" />
+  <ClientRouter fallback="swap" />
+</head>
+<body>
+  <div class="cursor" aria-hidden="true" transition:persist></div>
+
+  <header class="site-header" transition:persist>
+    <div class="wrap bar">
+      <a href="/" class="brand" aria-label="Bonaidea — home">
+        <Mark size={30} />
+        <span>Bonaidea</span>
+      </a>
+      <nav aria-label="Main">
+        {nav.map((n) => (
+          <a href={n.href} class:list={['nav-link', { active: path.startsWith(n.href) }]} data-magnetic>{n.label}</a>
+        ))}
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <slot />
+  </main>
+
+  <footer class="site-footer hairline">
+    <div class="wrap foot">
+      <div class="brand"><Mark size={24} /><span>Bonaidea</span></div>
+      <p class="mono">motion for saas · built in code</p>
+      <p class="mono"><a href="mailto:dc@bonaidea.pro">dc@bonaidea.pro</a> · kyiv · © {new Date().getFullYear()}</p>
+    </div>
+  </footer>
+
+  <script>
+    import { initMotion } from '../scripts/motion';
+    initMotion();
+  </script>
+</body>
+</html>
+
+<style>
+  .site-header {
+    position: fixed; inset: 0 0 auto 0; z-index: 50;
+    background: color-mix(in srgb, var(--ground) 82%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .bar { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+  .brand { display: inline-flex; align-items: center; gap: 12px; font: 500 20px/1 var(--font-display); letter-spacing: -0.02em; }
+  nav { display: flex; gap: 4px; }
+  .nav-link { padding: 10px 16px; border-radius: var(--r-pill); color: var(--ink-muted); font-size: 15px; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
+  .nav-link:hover, .nav-link.active { color: var(--ink); background: var(--surface); }
+  .foot { display: flex; flex-wrap: wrap; gap: 16px 40px; align-items: center; justify-content: space-between; padding-top: 40px; padding-bottom: 40px; }
+  @media (max-width: 600px) { .brand span { display: none; } .nav-link { padding: 10px 12px; } }
+</style>

@@ -1,0 +1,43 @@
+---
+import { works } from '../data/works';
+---
+<div class="grid">
+  {works.map((w) => (
+    <article class="card" data-zoom data-cursor>
+      <div class="media">
+        {w.video
+          ? <video src={w.video} poster={w.poster} muted loop playsinline preload="none" data-autoplay></video>
+          : <div class="placeholder"><span class="mono">in production</span></div>}
+      </div>
+      <div class="meta">
+        <h3 class="h3">{w.title}</h3>
+        <p class="mono">{w.tags}</p>
+      </div>
+    </article>
+  ))}
+</div>
+
+<script>
+  // Play case videos only while visible.
+  const run = () => {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        const v = e.target as HTMLVideoElement;
+        if (e.isIntersecting) v.play().catch(() => {}); else v.pause();
+      });
+    }, { threshold: 0.3 });
+    document.querySelectorAll<HTMLVideoElement>('video[data-autoplay]').forEach((v) => io.observe(v));
+  };
+  document.addEventListener('astro:page-load', run);
+</script>
+
+<style>
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .card { display: grid; gap: 18px; }
+  .media { aspect-ratio: 16 / 9; border-radius: var(--r-lg); overflow: hidden; background: var(--surface); border: 1px solid var(--hairline); }
+  .media video { width: 100%; height: 100%; object-fit: cover; }
+  .placeholder { width: 100%; height: 100%; display: grid; place-items: center; background:
+    radial-gradient(circle at 50% 50%, var(--accent-soft) 0 18%, transparent 18.2%); }
+  .meta { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+</style>

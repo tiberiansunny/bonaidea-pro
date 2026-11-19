@@ -1,0 +1,14 @@
+---
+import Base from '../layouts/Base.astro';
+import Mark from '../components/Mark.astro';
+---
+<Base title="Not found — Bonaidea">
+  <section class="page" data-hero>
+    <div class="wrap">
+      <Mark size={96} class="is-blink" />
+      <h1 class="display" data-reveal="lines">Out of focus.</h1>
+      <a href="/" class="btn" data-magnetic>Back home</a>
+    </div>
+  </section>
+</Base>
+<style>.page { padding-top: 200px; min-height: 80svh; } h1 { margin: 32px 0 40px; }</style>

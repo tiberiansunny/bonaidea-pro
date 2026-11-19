@@ -1,0 +1,18 @@
+---
+// Bonaidea mark — "Canon" construction: disc R54, concentric hole R27, dot R13.5 on the hole edge at 135°.
+interface Props { size?: number; class?: string; dot?: string; disc?: string; }
+const { size = 40, class: cls = '', dot = 'var(--ink)', disc = 'var(--accent)' } = Astro.props;
+---
+<svg class:list={['mark', cls]} width={size} height={size} viewBox="0 0 120 120" aria-hidden="true">
+  <path class="mark-disc" fill={disc} fill-rule="evenodd"
+    d="M6 60A54 54 0 1 1 114 60A54 54 0 1 1 6 60ZM33 60A27 27 0 1 0 87 60A27 27 0 1 0 33 60Z" />
+  <circle class="mark-dot" cx="40.908" cy="40.908" r="13.5" fill={dot} />
+</svg>
+
+<style>
+  .mark { overflow: visible; }
+  .mark-dot { transform-box: fill-box; transform-origin: center; }
+  /* Blink: dot squashes and returns, ≤600 ms */
+  :global(a:hover) .mark-dot, .mark.is-blink .mark-dot { animation: blink 520ms var(--ease-in-out); }
+  @keyframes blink { 0%,100% { transform: scaleY(1); } 45% { transform: scaleY(0.08); } }
+</style>

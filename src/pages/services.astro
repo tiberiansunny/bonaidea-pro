@@ -1,0 +1,37 @@
+---
+import Base from '../layouts/Base.astro';
+const items = [
+  { t: 'Product promo', d: 'A 30–60 s video for a launch, a landing page or a sales deck. Built from your real interface, brand colours and copy.', f: ['16:9 · 1:1 · 9:16', 'Music and sound design', '2 revision rounds'] },
+  { t: 'Ad variant packs', d: 'One ad concept rendered as many versions: different hooks, offers, languages and sizes. Made for performance testing.', f: ['10–30 variants', 'All placements', 'New batch in hours'] },
+  { t: 'Feature explainers', d: 'Short clips that show one feature working, for onboarding, help docs, release notes and social.', f: ['10–30 s', 'Captions included', 'Series pricing'] },
+  { t: 'Motion kits', d: 'Your brand as a set of animated scenes in code. Your team changes text and data, the video re-renders.', f: ['Remotion project', 'Brand tokens', 'Handover call'] },
+];
+---
+<Base title="Services — Bonaidea" description="Product promos, ad variant packs, feature explainers and motion kits for SaaS, built in code.">
+  <section class="page" data-hero>
+    <div class="wrap">
+      <p class="mono" data-fade>services</p>
+      <h1 class="display" data-reveal="lines">What I make</h1>
+      <div class="list">
+        {items.map((it, i) => (
+          <article class="item hairline" data-reveal="up">
+            <span class="mono">0{i + 1}</span>
+            <h2 class="h3">{it.t}</h2>
+            <p class="muted">{it.d}</p>
+            <ul class="mono">{it.f.map((x) => <li>{x}</li>)}</ul>
+          </article>
+        ))}
+      </div>
+      <a href="/contact/" class="btn" data-magnetic>Ask for a quote</a>
+    </div>
+  </section>
+</Base>
+<style>
+  .page { padding-top: 180px; }
+  h1 { margin: 16px 0 72px; }
+  .list { margin-bottom: 72px; }
+  .item { display: grid; grid-template-columns: 80px 1fr 1.4fr 1fr; gap: 24px; padding: 40px 0; align-items: start; }
+  .item p { margin: 0; }
+  .item ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  @media (max-width: 900px) { .item { grid-template-columns: 1fr; gap: 12px; } }
+</style>

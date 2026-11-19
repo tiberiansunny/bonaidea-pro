@@ -1,0 +1,121 @@
+---
+import Base from '../layouts/Base.astro';
+import Mark from '../components/Mark.astro';
+import WorkGrid from '../components/WorkGrid.astro';
+
+const services = [
+  { n: '01', t: 'Product promo', d: '30–60 s launch and feature videos built from your real UI, brand and copy.' },
+  { n: '02', t: 'Ad variant packs', d: '10–30 versions of one ad: hooks, offers, formats 16:9, 1:1, 9:16 — rendered from one source.' },
+  { n: '03', t: 'Feature explainers', d: 'Short clips that show one feature working. For onboarding, docs and changelogs.' },
+  { n: '04', t: 'Motion kits', d: 'Your brand turned into reusable animated scenes your team can re-render with new text.' },
+];
+const steps = [
+  { t: 'Brief', d: 'Goal, audience, assets, formats. One call or one doc.' },
+  { t: 'Style frame', d: 'Key frames in your brand before any animation starts.' },
+  { t: 'Build in code', d: 'Scenes written in React with Remotion. Every value is a parameter.' },
+  { t: 'Variants & delivery', d: 'Edits and new versions re-render in minutes, not days.' },
+];
+---
+<Base>
+  <section class="hero" data-hero>
+    <div class="wrap hero-grid">
+      <div>
+        <p class="mono" data-fade>motion for saas · built in code</p>
+        <h1 class="display" data-reveal="lines">Motion design<br/>for SaaS,<br/><span class="accent">built in code.</span></h1>
+        <p class="lead muted" data-fade>Product promos and ad variants for SaaS teams. 15+ years in video, now written as code — so every edit, size and version is fast and consistent.</p>
+        <div class="cta" data-fade>
+          <a href="/contact/" class="btn" data-magnetic>Start a project</a>
+          <a href="/work/" class="btn btn--ghost" data-magnetic>See work</a>
+        </div>
+      </div>
+      <div class="lens" data-lens aria-hidden="true">
+        <Mark size={520} />
+      </div>
+    </div>
+  </section>
+
+  <div class="marquee hairline" aria-hidden="true">
+    <div class="row mono-big" data-drift="1">product promo · ad variants · feature explainers · motion kits · product promo · ad variants · feature explainers ·</div>
+  </div>
+
+  <section id="services">
+    <div class="wrap">
+      <p class="mono" data-reveal="up">services</p>
+      <h2 class="h2" data-reveal="lines">One source.<br/>Every format.</h2>
+      <div class="services">
+        {services.map((s) => (
+          <article class="svc" data-reveal="up">
+            <span class="mono">{s.n}</span>
+            <h3 class="h3">{s.t}</h3>
+            <p class="muted">{s.d}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="hairline">
+    <div class="wrap">
+      <p class="mono" data-reveal="up">selected work</p>
+      <h2 class="h2" data-reveal="lines">Work</h2>
+      <WorkGrid />
+    </div>
+  </section>
+
+  <section class="hairline">
+    <div class="wrap">
+      <p class="mono" data-reveal="up">process</p>
+      <h2 class="h2" data-reveal="lines">Why code,<br/>not a timeline.</h2>
+      <ol class="steps">
+        {steps.map((s, i) => (
+          <li data-reveal="up">
+            <span class="mono">0{i + 1}</span>
+            <h3 class="h3">{s.t}</h3>
+            <p class="muted">{s.d}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="final hairline">
+    <div class="wrap final-in">
+      <h2 class="display" data-reveal="lines">Have a product<br/>to show?</h2>
+      <a href="/contact/" class="btn" data-magnetic>Tell me about it</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero { min-height: 100svh; display: flex; align-items: center; padding-top: 140px; }
+  .hero-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 40px; align-items: center; }
+  .hero h1 { margin: 20px 0 28px; font-size: clamp(48px, 7.2vw, 116px); }
+  .lead { max-width: 560px; font-size: 19px; margin: 0 0 40px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; }
+  .lens { justify-self: end; width: min(520px, 100%); }
+  .lens :global(svg) { width: 100%; height: auto; }
+
+  .marquee { overflow: hidden; padding: 28px 0; border-bottom: 1px solid var(--hairline); }
+  .row { white-space: nowrap; }
+  .mono-big { font: 500 clamp(32px, 5vw, 72px)/1 var(--font-display); letter-spacing: -0.03em; color: var(--hairline); }
+
+  h2 { margin: 16px 0 64px; }
+  .services { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: var(--r-lg); overflow: hidden; }
+  .svc { background: var(--ground); padding: 40px; display: grid; gap: 14px; transition: background var(--dur-base) var(--ease-out); }
+  .svc:hover { background: var(--surface); }
+  .svc p { margin: 0; }
+
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; }
+  .steps li { display: grid; gap: 14px; align-content: start; border-top: 1px solid var(--hairline); padding-top: 24px; }
+  .steps p { margin: 0; }
+
+  .final-in { display: grid; gap: 48px; justify-items: start; }
+
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .lens { order: -1; justify-self: start; width: 160px; }
+    .services { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) { .steps { grid-template-columns: 1fr; } .svc { padding: 28px; } }
+</style>
