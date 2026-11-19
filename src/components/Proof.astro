@@ -1,0 +1,81 @@
+---
+// Social proof from marketplace profiles. Numbers as of Nov 2026 — update when they change.
+const UPWORK = 'https://www.upwork.com/freelancers/~019c5030dade6e174d';
+const FIVERR = 'https://www.fiverr.com/bonaideapro';
+
+const stats = [
+  { v: '4.9★', l: '394 reviews on Fiverr', href: FIVERR },
+  { v: '100%', l: 'Job Success on Upwork', href: UPWORK },
+  { v: 'Top Rated Plus', l: 'Upwork talent badge', href: UPWORK },
+  { v: '10+', l: 'countries, many repeat clients' },
+];
+
+const quotes = [
+  {
+    q: "It's a pleasure to work with people who don't just do what you tell them, but offer their own ideas — which leads to a better result.",
+    a: 'Creative team, Australia · repeat client',
+  },
+  {
+    q: 'First class, top shelf service. Diversified skillset, quick to respond, and offered several options within my budget.',
+    a: 'Jim, USA',
+  },
+  {
+    q: "There's no way going wrong with this guy. Top quality, top skills, top communication.",
+    a: 'Client, UK · repeat client',
+  },
+];
+---
+<section class="hairline" id="proof">
+  <div class="wrap">
+    <p class="mono" data-reveal="up">proof</p>
+    <h2 class="h2" data-reveal="lines">Trusted by teams<br/>in 10+ countries.</h2>
+
+    <ul class="stats">
+      {stats.map((s) => (
+        <li data-reveal="up">
+          {s.href ? (
+            <a href={s.href} target="_blank" rel="noopener">
+              <span class="v">{s.v}</span>
+              <span class="mono">{s.l} ↗</span>
+            </a>
+          ) : (
+            <>
+              <span class="v">{s.v}</span>
+              <span class="mono">{s.l}</span>
+            </>
+          )}
+        </li>
+      ))}
+    </ul>
+
+    <div class="quotes">
+      {quotes.map((x) => (
+        <figure data-reveal="up">
+          <blockquote>“{x.q}”</blockquote>
+          <figcaption class="mono">— {x.a}</figcaption>
+        </figure>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  h2 { margin: 16px 0 64px; }
+  .stats { list-style: none; margin: 0 0 64px; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: var(--r-lg); overflow: hidden; }
+  .stats li { background: var(--ground); }
+  .stats li > a, .stats li { display: grid; gap: 10px; align-content: start; }
+  .stats li > a, .stats li:not(:has(a)) { padding: 32px; }
+  .stats li > a { transition: background var(--dur-base) var(--ease-out); height: 100%; }
+  .stats li > a:hover { background: var(--surface); }
+  .v { font: 500 clamp(28px, 3vw, 44px)/1.05 var(--font-display); letter-spacing: -0.03em; }
+
+  .quotes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  figure { margin: 0; border-top: 1px solid var(--hairline); padding-top: 24px; display: grid; gap: 18px; align-content: start; }
+  blockquote { margin: 0; font-size: 19px; line-height: 1.5; }
+
+  @media (max-width: 900px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .quotes { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) { .stats li > a, .stats li:not(:has(a)) { padding: 24px; } }
+</style>
