@@ -88,3 +88,31 @@ section { padding: clamp(96px, 14vw, 200px) 0; }
 ::view-transition-new(root) { animation: var(--dur-slow) var(--ease-out) both vt-in; }
 @keyframes vt-out { to { opacity: 0; transform: scale(0.98); } }
 @keyframes vt-in { from { clip-path: circle(0% at 50% 50%); } to { clip-path: circle(150% at 50% 50%); } }
+
+/* ---------- interactive hero headline (hero-play.ts) ---------- */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+[data-hero].is-live .line { overflow: visible; }
+.hp-on { position: relative; }
+.hp-w { display: inline-block; position: relative; white-space: nowrap; }
+.hp-c { display: inline-block; text-align: center; will-change: transform; transition: color .18s, opacity .25s; }
+.hp-c.hp-ghost { opacity: .08; }
+.hp-cv { position: absolute; left: -100px; top: -100px; pointer-events: none; z-index: 2; }
+.hp-sel { position: absolute; pointer-events: none; border: 1px solid #4DA3FF; opacity: 0; transition: opacity .18s; z-index: 1; }
+.hp-sel.on { opacity: 1; }
+.hp-sel::before, .hp-sel::after { content: ''; position: absolute; left: -40vw; right: -40vw; border-top: 1px dashed rgba(77,163,255,.35); }
+.hp-sel::before { top: 22%; } .hp-sel::after { bottom: 18%; }
+.hp-sel i { position: absolute; width: 7px; height: 7px; background: var(--ground); border: 1px solid #4DA3FF; }
+.hp-sel i:nth-child(1) { left: -4px; top: -4px; } .hp-sel i:nth-child(2) { right: -4px; top: -4px; }
+.hp-sel i:nth-child(3) { left: -4px; bottom: -4px; } .hp-sel i:nth-child(4) { right: -4px; bottom: -4px; }
+.hp-sel-l { position: absolute; left: -1px; top: -22px; background: #4DA3FF; color: #0B0B0F; font: 500 11px/1 var(--font-mono); letter-spacing: 0; padding: 4px 6px; border-radius: 3px; white-space: nowrap; }
+.hp-tip { position: absolute; pointer-events: none; transform: translate(-50%, -100%); opacity: 0; transition: opacity .18s; background: var(--surface-raised, #1E1E26); border: 1px solid var(--hairline); border-radius: 10px; padding: 6px 10px; display: grid; gap: 2px; z-index: 3; white-space: nowrap; }
+.hp-tip.on { opacity: 1; }
+.hp-tip b { font: 500 14px/1.1 var(--font-display); letter-spacing: 0; color: #3ECF8E; }
+.hp-tip span { font: 400 10px/1 var(--font-mono); letter-spacing: .04em; color: var(--ink-muted); }
+.hp-spark { position: absolute; height: 36px; overflow: visible; pointer-events: none; opacity: 0; transition: opacity .2s; }
+.hp-spark.on { opacity: 1; }
+.hp-snip { position: absolute; pointer-events: none; transform: translateY(-50%); opacity: 0; transition: opacity .15s; z-index: 3; white-space: nowrap; letter-spacing: 0; line-height: 1.2; }
+.hp-snip.on { opacity: 1; }
+.hp-snip em { display: block; font: 500 11px/1 var(--font-mono); font-style: normal; color: var(--accent-text); letter-spacing: .08em; text-transform: uppercase; margin-bottom: .35em; }
+.hp-snip code { font-family: var(--font-mono); font-weight: 500; }
+@media (prefers-reduced-motion: reduce) { .hp-cv, .hp-sel, .hp-tip, .hp-snip, .hp-spark { display: none; } }

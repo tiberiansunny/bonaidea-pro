@@ -1,3 +1,4 @@
+import { initHeroPlay } from './hero-play';
 // Site motion: Lenis smooth scroll, GSAP reveals, custom cursor, magnetic buttons.
 // Respects prefers-reduced-motion; lighter on touch devices.
 import { gsap } from 'gsap';
@@ -73,7 +74,7 @@ function pageMotion() {
     const hero = document.querySelector('[data-hero]');
     if (hero) {
       const tl = gsap.timeline({ defaults: { ease: EASE } });
-      tl.from(hero.querySelectorAll('.line > span'), { yPercent: 110, duration: 1.2, stagger: 0.06 })
+      tl.from(hero.querySelectorAll('.line > span'), { yPercent: 110, duration: 1.2, stagger: 0.06, onComplete: () => { hero.classList.add('is-live'); initHeroPlay(); } })
         .from(hero.querySelectorAll('[data-fade]'), { y: 24, opacity: 0, duration: 0.8, stagger: 0.08 }, '-=0.8');
     }
 
