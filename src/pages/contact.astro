@@ -1,53 +1,309 @@
 ---
 import Base from '../layouts/Base.astro';
+import { bonuses, complete } from '../data/bonuses';
+
+// Ring geometry: same proportions as the mark (disc R54 in a 120 box), split into segments.
+const N = bonuses.length;
+const R = 47, SW = 14, GAP = 6; // degrees of gap between segments
+const C = 2 * Math.PI * R;
+const seg = C / N - (GAP / 360) * C;
 ---
 <Base title="Contact — Bonaidea" description="Tell me about your product and the video you need. Reply within one working day.">
   <section class="page" data-hero>
     <div class="wrap grid">
-      <div>
+      <div class="intro">
         <p class="mono" data-fade>contact</p>
         <h1 class="display" data-reveal="lines">Let's talk<br/>about your<br/>product.</h1>
         <p class="muted" data-fade>Reply within one working day. Kyiv time, UTC+2.</p>
         <p data-fade><a class="mail" href="mailto:dc@bonaidea.pro" data-magnetic>dc@bonaidea.pro</a></p>
       </div>
-      <form class="form" id="brief" data-reveal="up">
-        <label>Name<input name="name" required autocomplete="name" /></label>
-        <label>Email<input name="email" type="email" required autocomplete="email" /></label>
-        <label>Product URL<input name="url" type="url" placeholder="https://" /></label>
-        <label>What do you need?
-          <select name="type">
-            <option>Product promo</option><option>Ad variant pack</option><option>Feature explainer</option><option>Motion kit</option><option>Not sure yet</option>
-          </select>
-        </label>
-        <label>Details<textarea name="details" rows="5" placeholder="Goal, deadline, formats, budget range"></textarea></label>
+
+      <form class="form" id="brief" novalidate data-reveal="up">
+        <fieldset class="req">
+          <label>Name<input name="name" required autocomplete="name" /></label>
+          <label>Email<input name="email" type="email" required autocomplete="email" /></label>
+          <label>What do you need?
+            <select name="type" required>
+              <option value="" selected disabled>Choose one</option>
+              <option>Product promo</option><option>Ad variant pack</option><option>Feature explainer</option><option>Motion kit</option><option>Not sure yet</option>
+            </select>
+          </label>
+        </fieldset>
+
+        <!-- Bonus meter: the mark split into segments -->
+        <div class="meter" aria-live="polite">
+          <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+            <g transform="rotate(-90 60 60)">
+              {bonuses.map((_, i) => (
+                <circle class="seg-bg" cx="60" cy="60" r={R} fill="none" stroke-width={SW}
+                  stroke-dasharray={`${seg} ${C}`} stroke-dashoffset={-(i * C / N)} />
+              ))}
+              {bonuses.map((_, i) => (
+                <circle class="seg" data-seg={i} cx="60" cy="60" r={R} fill="none" stroke-width={SW}
+                  stroke-dasharray={`0 ${C}`} stroke-dashoffset={-(i * C / N)} data-len={seg} data-c={C} />
+              ))}
+            </g>
+            <circle class="full-disc" cx="60" cy="60" r="54" />
+            <circle class="hole" cx="60" cy="60" r="27" />
+            <circle class="dot" cx="40.908" cy="40.908" r="13.5" />
+          </svg>
+          <div class="meter-text">
+            <p class="mono meter-label">brief bonuses</p>
+            <p class="meter-count"><span id="count">0</span><span class="muted">/{N}</span></p>
+            <p class="muted meter-hint" id="meterHint">Fill in the basics to unlock bonus questions.</p>
+          </div>
+        </div>
+
+        <div class="bonus-zone" id="bonusZone" hidden>
+          {bonuses.map((b) => (
+            <div class="q" data-field={b.field}>
+              <div class="q-head">
+                <span class="q-title">{b.question}</span>
+                <span class="chip" data-chip><span class="chip-dot"></span><span class="chip-text">{b.reward}</span></span>
+              </div>
+              {b.field === 'url' && <input name="url" type="url" inputmode="url" placeholder="https://" />}
+              {b.field === 'formats' && (
+                <div class="toggles">
+                  {['16:9', '9:16', '1:1', '4:5'].map((f) => (
+                    <label class="toggle"><input type="checkbox" name="formats" value={f} /><span>{f}</span></label>
+                  ))}
+                </div>
+              )}
+              {b.field === 'budget' && (
+                <div class="toggles">
+                  {['< $500', '$500–1.5k', '$1.5–3k', '$3k+'].map((f) => (
+                    <label class="toggle"><input type="radio" name="budget" value={f} /><span>{f}</span></label>
+                  ))}
+                </div>
+              )}
+              {b.field === 'refs' && <input name="refs" placeholder="Paste links" />}
+              {b.field === 'goal' && <textarea name="goal" rows="3"></textarea>}
+              <p class="q-hint">{b.hint}</p>
+            </div>
+          ))}
+          <div class="complete" id="complete">
+            <span class="mono">{complete.note}</span>
+            <strong>{complete.reward}</strong>
+          </div>
+        </div>
+
         <button class="btn" type="submit" data-magnetic>Send brief</button>
-        <p class="mono">opens your mail app with the brief filled in</p>
+        <p class="mono small">opens your mail app with the brief and your bonuses</p>
+
+        <div class="toast" id="toast" role="status"><span class="toast-dot"></span><span class="toast-in"><span id="toastText"></span></span></div>
       </form>
     </div>
   </section>
 </Base>
+
 <script>
-  document.addEventListener('astro:page-load', () => {
-    const f = document.getElementById('brief') as HTMLFormElement | null;
-    if (!f || f.dataset.bound) return;
-    f.dataset.bound = '1';
-    f.addEventListener('submit', (e) => {
+  import { gsap } from 'gsap';
+  import { bonuses, complete } from '../data/bonuses';
+
+  const reduce = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function init() {
+    const form = document.getElementById('brief') as HTMLFormElement | null;
+    if (!form || form.dataset.bound) return;
+    form.dataset.bound = '1';
+
+    const zone = document.getElementById('bonusZone')!;
+    const countEl = document.getElementById('count')!;
+    const hint = document.getElementById('meterHint')!;
+    const toast = document.getElementById('toast')!;
+    const toastText = document.getElementById('toastText')!;
+    const segs = [...form.querySelectorAll<SVGCircleElement>('.seg')];
+    const disc = form.querySelector<SVGCircleElement>('.full-disc')!;
+    const dot = form.querySelector<SVGCircleElement>('.dot')!;
+    const completeEl = document.getElementById('complete')!;
+    const unlocked = new Set<string>();
+    let zoneOpen = false;
+    let allDone = false;
+
+    const val = (n: string) => (form.elements.namedItem(n) as HTMLInputElement | null)?.value?.trim() ?? '';
+    const checks: Record<string, () => boolean> = {
+      url: () => /^https?:\/\/[^\s.]+\.[^\s]{2,}/i.test(val('url')) || /^[\w-]+\.[a-z]{2,}/i.test(val('url')),
+      formats: () => form.querySelectorAll('input[name="formats"]:checked').length > 0,
+      budget: () => !!form.querySelector('input[name="budget"]:checked'),
+      refs: () => val('refs').length >= 8,
+      goal: () => val('goal').length >= 40,
+    };
+    const requiredOk = () =>
+      val('name').length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('email')) && !!(form.elements.namedItem('type') as HTMLSelectElement).value;
+
+    const blink = () => {
+      if (reduce()) return;
+      gsap.timeline().to(dot, { scaleY: 0.08, transformOrigin: '50% 50%', duration: 0.22, ease: 'power2.in' })
+        .to(dot, { scaleY: 1, duration: 0.3, ease: 'expo.out' });
+    };
+
+    let toastTl: gsap.core.Timeline | null = null;
+    const showToast = (text: string, strong = false) => {
+      toastText.textContent = text;
+      toast.classList.toggle('is-strong', strong);
+      toastTl?.kill();
+      if (reduce()) { toast.style.opacity = '1'; setTimeout(() => (toast.style.opacity = '0'), 2400); return; }
+      toastTl = gsap.timeline()
+        .fromTo(toast, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.4, ease: 'expo.out' })
+        .fromTo('#toastText', { yPercent: 110 }, { yPercent: 0, duration: 0.6, ease: 'expo.out' }, '<0.05')
+        .fromTo('.toast-dot', { scale: 0 }, { scale: 1, duration: 0.5, ease: 'back.out(3)' }, '<')
+        .to(toast, { opacity: 0, y: -8, duration: 0.4, ease: 'power2.in' }, '+=2.2');
+    };
+
+    const fillSeg = (i: number, on: boolean) => {
+      const s = segs[i];
+      const len = Number(s.dataset.len), c = Number(s.dataset.c);
+      const obj = { v: on ? 0 : len };
+      if (reduce()) { s.setAttribute('stroke-dasharray', `${on ? len : 0} ${c}`); return; }
+      gsap.to(obj, { v: on ? len : 0, duration: on ? 0.8 : 0.4, ease: on ? 'expo.out' : 'power2.inOut',
+        onUpdate: () => s.setAttribute('stroke-dasharray', `${obj.v} ${c}`) });
+    };
+
+    const openZone = () => {
+      if (zoneOpen) return;
+      zoneOpen = true;
+      zone.hidden = false;
+      hint.textContent = 'Each answer below unlocks a bonus.';
+      if (reduce()) return;
+      gsap.from(zone.querySelectorAll('.q'), { y: 24, opacity: 0, duration: 0.7, ease: 'expo.out', stagger: 0.06 });
+      blink();
+    };
+
+    const update = () => {
+      if (requiredOk()) openZone();
+      bonuses.forEach((b, i) => {
+        const ok = checks[b.field]?.() ?? false;
+        const was = unlocked.has(b.field);
+        if (ok === was) return;
+        const q = zone.querySelector<HTMLElement>(`.q[data-field="${b.field}"]`)!;
+        q.classList.toggle('is-done', ok);
+        if (ok) {
+          unlocked.add(b.field);
+          fillSeg(i, true);
+          blink();
+          showToast(`Unlocked: ${b.reward}`);
+          if (!reduce()) gsap.fromTo(q.querySelector('[data-chip]'), { scale: 0.9 }, { scale: 1, duration: 0.6, ease: 'elastic.out(1, 0.5)' });
+        } else {
+          unlocked.delete(b.field);
+          fillSeg(i, false);
+        }
+      });
+      countEl.textContent = String(unlocked.size);
+      const done = unlocked.size === bonuses.length;
+      if (done !== allDone) {
+        allDone = done;
+        completeEl.classList.toggle('is-on', done);
+        form.classList.toggle('is-complete', done);
+        if (done) {
+          showToast(`${complete.note}: ${complete.reward}`, true);
+          if (!reduce()) {
+            gsap.timeline()
+              .fromTo(disc, { scale: 0.6, opacity: 0, transformOrigin: '50% 50%' }, { scale: 1, opacity: 1, duration: 0.8, ease: 'expo.out' })
+              .fromTo(completeEl, { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: 'expo.out' }, '<0.2');
+          }
+          hint.textContent = 'All bonuses unlocked.';
+        } else {
+          if (!reduce()) gsap.to(disc, { opacity: 0, duration: 0.3 });
+          hint.textContent = 'Each answer below unlocks a bonus.';
+        }
+      }
+    };
+
+    form.addEventListener('input', update);
+    form.addEventListener('change', update);
+
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const d = new FormData(f);
-      const body = [...d.entries()].map(([k, v]) => `${k}: ${v}`).join('\n');
-      location.href = `mailto:dc@bonaidea.pro?subject=${encodeURIComponent('Brief: ' + d.get('type'))}&body=${encodeURIComponent(body)}`;
+      if (!requiredOk()) {
+        form.querySelectorAll<HTMLInputElement>('.req input, .req select').forEach((el) => el.classList.toggle('is-error', !el.checkValidity() || !el.value));
+        showToast('Name, email and type are needed first.');
+        return;
+      }
+      const d = new FormData(form);
+      const lines = [
+        `Name: ${d.get('name')}`, `Email: ${d.get('email')}`, `Need: ${d.get('type')}`,
+        d.get('url') && `Product: ${d.get('url')}`,
+        d.getAll('formats').length && `Formats: ${d.getAll('formats').join(', ')}`,
+        d.get('budget') && `Budget: ${d.get('budget')}`,
+        d.get('refs') && `References: ${d.get('refs')}`,
+        d.get('goal') && `Goal: ${d.get('goal')}`,
+        '', `Unlocked bonuses (${unlocked.size}/${bonuses.length}):`,
+        ...bonuses.filter((b) => unlocked.has(b.field)).map((b) => `• ${b.reward}`),
+        allDone ? `• ${complete.reward}` : '',
+      ].filter((l) => l !== 0 && l !== null && l !== undefined && l !== false) as string[];
+      location.href = `mailto:dc@bonaidea.pro?subject=${encodeURIComponent('Brief: ' + d.get('type') + ' — ' + d.get('name'))}&body=${encodeURIComponent(lines.join('\n'))}`;
     });
-  });
+  }
+
+  document.addEventListener('astro:page-load', init);
 </script>
+
 <style>
   .page { padding-top: 180px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; align-items: start; }
+  .grid > * { min-width: 0; }
   h1 { margin: 16px 0 32px; }
   .mail { font: 500 clamp(22px, 2.4vw, 32px)/1.2 var(--font-display); border-bottom: 1px solid var(--accent); display: inline-block; }
-  .form { display: grid; gap: 18px; background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-lg); padding: 36px; }
+
+  .form { position: relative; display: grid; gap: 22px; width: 100%; background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-lg); padding: clamp(22px, 4vw, 36px); }
+  fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 18px; min-width: 0; }
   label { display: grid; gap: 8px; font-size: 14px; color: var(--ink-muted); }
-  input, select, textarea { font: inherit; font-size: 16px; color: var(--ink); background: var(--ground); border: 1px solid var(--hairline); border-radius: var(--r-md); padding: 14px 16px; outline: none; transition: border-color var(--dur-fast) var(--ease-out); }
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+    width: 100%; min-width: 0; font: inherit; font-size: 16px; color: var(--ink); background: var(--ground);
+    border: 1px solid var(--hairline); border-radius: var(--r-md); padding: 14px 16px; outline: none;
+    transition: border-color var(--dur-fast) var(--ease-out);
+  }
   input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  .is-error { border-color: #FF6B6B !important; }
+
+  /* meter */
+  .meter { display: flex; align-items: center; gap: 20px; padding: 18px 0; border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
+  .ring { width: 88px; height: 88px; flex: none; overflow: visible; }
+  .seg-bg { stroke: var(--raised); }
+  .seg { stroke: var(--accent); stroke-linecap: butt; }
+  .full-disc { fill: var(--accent); opacity: 0; }
+  .hole { fill: var(--surface); }
+  .dot { fill: var(--ink); transform-box: fill-box; transform-origin: center; }
+  .meter-text p { margin: 0; }
+  .meter-count { font: 500 34px/1.1 var(--font-display); letter-spacing: -0.02em; margin: 2px 0 4px !important; }
+  .meter-hint { font-size: 14px; }
+
+  /* bonus questions */
+  .bonus-zone { display: grid; gap: 14px; }
+  .q { display: grid; gap: 10px; padding: 16px; border-radius: var(--r-md); border: 1px solid var(--hairline); transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out); }
+  .q.is-done { border-color: color-mix(in srgb, var(--accent) 45%, var(--hairline)); background: color-mix(in srgb, var(--accent-soft) 40%, transparent); }
+  .q-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .q-title { color: var(--ink); font-size: 15px; font-weight: 500; }
+  .q-hint { margin: 0; font-size: 13px; color: var(--ink-muted); }
+  .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: var(--r-pill); font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted); background: var(--ground); border: 1px dashed var(--hairline); transition: all var(--dur-base) var(--ease-out); }
+  .chip-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--ink-muted); transition: all var(--dur-base) var(--ease-out); }
+  .q.is-done .chip { color: var(--accent-text); border: 1px solid transparent; background: var(--accent-soft); }
+  .q.is-done .chip-dot { background: var(--accent); border-color: var(--accent); }
+
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toggle { display: inline-flex; cursor: pointer; }
+  .toggle input { position: absolute; opacity: 0; pointer-events: none; }
+  .toggle span { padding: 10px 16px; border-radius: var(--r-pill); border: 1px solid var(--hairline); background: var(--ground); color: var(--ink); font-size: 15px; transition: all var(--dur-fast) var(--ease-out); }
+  .toggle input:checked + span { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+  .toggle input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .complete { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 18px; border-radius: var(--r-md); border: 1px dashed var(--hairline); color: var(--ink-muted); }
+  .complete strong { font: 500 18px var(--font-display); color: var(--ink-muted); }
+  .complete.is-on { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); }
+  .complete.is-on strong, .complete.is-on .mono { color: var(--accent-ink); }
+
   .form .btn { justify-self: start; border: 0; cursor: pointer; }
-  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .small { margin: -8px 0 0; font-size: 12px; }
+
+  /* toast */
+  .toast { position: fixed; left: 0; right: 0; margin: 0 auto; width: fit-content; bottom: 24px; opacity: 0; pointer-events: none; z-index: 5;
+    display: inline-flex; align-items: center; gap: 10px; padding: 12px 18px; border-radius: 22px; max-width: min(92vw, 520px); line-height: 1.35;
+    background: var(--ink); color: var(--ground); font-size: 14px; font-weight: 500; }
+  .toast.is-strong { background: var(--accent); color: var(--accent-ink); }
+  .toast-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex: none; }
+  .toast.is-strong .toast-dot { background: var(--accent-ink); }
+  .toast-in { overflow: hidden; display: inline-block; }
+  #toastText { display: inline-block; }
+
+  @media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
 </style>
