@@ -4,6 +4,7 @@ import { works } from '../data/works';
 <div class="grid">
   {works.map((w) => (
     <article class="card" data-zoom data-cursor>
+      {w.href && <a class="cover" href={w.href} aria-label={`Open case: ${w.title}`}></a>}
       <div class="media">
         {w.video
           ? <video src={w.video} poster={w.poster} muted loop playsinline preload="none" data-autoplay></video>
@@ -33,7 +34,9 @@ import { works } from '../data/works';
 
 <style>
   .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
-  .card { display: grid; gap: 18px; }
+  .card { display: grid; gap: 18px; position: relative; }
+  .cover { position: absolute; inset: 0; z-index: 2; }
+  .card:has(.cover) .h3::after { content: ' →'; color: var(--accent-text); }
   .media { aspect-ratio: 16 / 9; border-radius: var(--r-lg); overflow: hidden; background: var(--surface); border: 1px solid var(--hairline); }
   .media video { width: 100%; height: 100%; object-fit: cover; }
   .placeholder { width: 100%; height: 100%; display: grid; place-items: center; background:

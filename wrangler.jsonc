@@ -1,11 +1,19 @@
 {
   "name": "bonaidea-site",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "html_handling": "auto-trailing-slash"
+    "html_handling": "auto-trailing-slash",
+    "run_worker_first": ["/api/*"]
   },
+  // Contact form: email to the verified address only (free on all plans), sent from the Email Routing subdomain.
+  "send_email": [{ "name": "EMAIL", "destination_address": "dc@bonaidea.pro" }],
+  // Backup copy of every brief + rate-limit counters.
+  "kv_namespaces": [{ "binding": "BRIEFS", "id": "64f77f0fe53b4a24ae3fbd45fd0da871" }],
+  "observability": { "enabled": true },
   "routes": [
     { "pattern": "www.bonaidea.pro", "custom_domain": true },
     { "pattern": "bonaidea.pro", "custom_domain": true }

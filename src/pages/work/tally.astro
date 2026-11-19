@@ -1,0 +1,101 @@
+---
+import Base from '../../layouts/Base.astro';
+const formats = [
+  { id: '16x9', label: '16:9', ratio: '16 / 9', w: 'min(100%, 1120px)' },
+  { id: '9x16', label: '9:16', ratio: '9 / 16', w: 'min(100%, 420px)' },
+  { id: '1x1', label: '1:1', ratio: '1 / 1', w: 'min(100%, 640px)' },
+];
+---
+<Base title="Tally — SaaS product promo · Bonaidea" description="15-second SaaS product promo built in code with Remotion: one parametric composition, three formats, original score.">
+  <section class="page" data-hero>
+    <div class="wrap">
+      <p class="mono" data-fade><a href="/work/">work</a> / tally</p>
+      <h1 class="display" data-reveal="lines">Tally — SaaS<br />product promo</h1>
+      <p class="muted lead" data-fade>A 15-second promo for a product-analytics tool. Hook the pain, show the product, land one number, close on a clear call to action.</p>
+
+      <div class="switch" role="group" aria-label="Format" data-fade>
+        {formats.map((f, i) => (
+          <button class={'fmt' + (i === 0 ? ' on' : '')} data-f={f.id} data-ratio={f.ratio} data-w={f.w} aria-pressed={i === 0 ? 'true' : 'false'}>{f.label}</button>
+        ))}
+        <button class="fmt sound" id="sound" aria-pressed="false">Sound off</button>
+      </div>
+
+      <div class="stage" id="stage" style={`--ratio:${formats[0].ratio};--w:${formats[0].w}`}>
+        <video id="vid" src="/media/tally/tally-promo-16x9.mp4" poster="/media/tally/poster-16x9.webp" muted loop playsinline autoplay preload="metadata"></video>
+      </div>
+
+      <div class="facts" data-reveal="up">
+        <div><span class="mono">client</span><p>Tally (concept product)</p></div>
+        <div><span class="mono">length</span><p>15 s · 30 fps</p></div>
+        <div><span class="mono">formats</span><p>16:9 · 9:16 · 1:1</p></div>
+        <div><span class="mono">built with</span><p>Remotion, React, TypeScript</p></div>
+      </div>
+
+      <div class="cols">
+        <div data-reveal="up">
+          <h2 class="h3">Task</h2>
+          <p class="muted">Sell an analytics product in 15 seconds: show the chaos of scattered dashboards, the product that fixes it, and one result a buyer remembers. Every placement needs its own format.</p>
+        </div>
+        <div data-reveal="up">
+          <h2 class="h3">Solution in code</h2>
+          <p class="muted">One parametric composition in Remotion. Hooks, metric, tagline, CTA and URL are props, so a new headline, language or number re-renders in minutes instead of a re-edit. The score is composed in code too: intro, build, climax on the metric, coda on the logo, synced to frame events.</p>
+        </div>
+        <div data-reveal="up">
+          <h2 class="h3">Result</h2>
+          <p class="muted">Three platform-ready cuts from one source, about 3 MB each. Vertical cut keeps the bottom 20% clear for platform UI, text never below 40 px.</p>
+        </div>
+      </div>
+
+      <div class="cta" data-reveal="up">
+        <h2 class="h2">Need one like this for your product?</h2>
+        <a class="btn" href="/contact/" data-magnetic>Start a brief</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  const init = () => {
+    const stage = document.getElementById('stage');
+    const vid = document.getElementById('vid') as HTMLVideoElement | null;
+    const sound = document.getElementById('sound');
+    if (!stage || !vid || !sound) return;
+    document.querySelectorAll<HTMLButtonElement>('.fmt[data-f]').forEach((b) => b.addEventListener('click', () => {
+      document.querySelectorAll('.fmt[data-f]').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+      const f = b.dataset.f!;
+      stage.style.setProperty('--ratio', b.dataset.ratio!);
+      stage.style.setProperty('--w', b.dataset.w!);
+      const t = vid.currentTime;
+      vid.src = `/media/tally/tally-promo-${f}.mp4`; vid.poster = `/media/tally/poster-${f}.webp`;
+      vid.addEventListener('loadedmetadata', () => { vid.currentTime = t; vid.play().catch(() => {}); }, { once: true });
+    }));
+    sound.addEventListener('click', () => {
+      vid.muted = !vid.muted;
+      if (!vid.muted) { vid.currentTime = 0; vid.play().catch(() => {}); }
+      sound.textContent = vid.muted ? 'Sound off' : 'Sound on';
+      sound.setAttribute('aria-pressed', String(!vid.muted));
+      sound.classList.toggle('on', !vid.muted);
+    });
+  };
+  document.addEventListener('astro:page-load', init);
+</script>
+
+<style>
+  .page { padding-top: 180px; padding-bottom: 120px; }
+  .page a:not(.btn) { color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
+  h1 { margin: 16px 0 24px; }
+  .lead { max-width: 620px; margin: 0 0 40px; }
+  .switch { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .fmt { border: 1px solid var(--hairline); background: transparent; color: var(--ink-muted); border-radius: 999px; padding: 8px 16px; font: 500 13px var(--font-mono, monospace); cursor: pointer; transition: all .18s; }
+  .fmt.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+  .sound { margin-left: auto; }
+  .stage { width: var(--w); aspect-ratio: var(--ratio); margin: 0 auto 64px; border-radius: var(--r-lg, 20px); overflow: hidden; background: #000; border: 1px solid var(--hairline); transition: width .5s cubic-bezier(.16,1,.3,1), aspect-ratio .5s cubic-bezier(.16,1,.3,1); }
+  .stage video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); padding: 24px 0; margin-bottom: 64px; }
+  .facts p { margin: 6px 0 0; }
+  .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin-bottom: 96px; }
+  .cols h2 { margin-bottom: 12px; }
+  .cta { display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; }
+  @media (max-width: 860px) { .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cols { grid-template-columns: 1fr; gap: 28px; } .sound { margin-left: 0; } }
+  @media (prefers-reduced-motion: reduce) { .stage { transition: none; } }
+</style>
