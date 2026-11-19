@@ -58,7 +58,7 @@ function splitLines(el: HTMLElement) {
   // Wrap each <br>-separated chunk (or the whole text) in mask spans.
   if (el.dataset.split) return;
   el.dataset.split = '1';
-  const parts = el.innerHTML.split(/<br\s*\/?>/i);
+  const parts = el.innerHTML.split(/<br[^>]*>/i);
   el.innerHTML = parts.map((p) => `<span class="line"><span>${p.trim()}</span></span>`).join('');
 }
 

@@ -34,7 +34,8 @@ export function initHeroPlay() {
   h1.dataset.play = '1';
 
   // ---------- build: accessible copy + decorated words ----------
-  const label = h1.textContent!.replace(/\s+/g, ' ').trim();
+  const lines = h1.querySelectorAll('.line');
+  const label = (lines.length ? [...lines].map((l) => l.textContent!.trim()).join(' ') : h1.textContent!).replace(/\s+/g, ' ').trim();
   const sr = document.createElement('span');
   sr.className = 'sr-only';
   sr.textContent = label;
@@ -45,6 +46,7 @@ export function initHeroPlay() {
   };
   const walk = (node: Node) => {
     [...node.childNodes].forEach((n) => {
+      if (n.nodeType === 1 && (n as HTMLElement).classList.contains('hp-w')) return;
       if (n.nodeType === 3) {
         const frag = document.createDocumentFragment();
         n.textContent!.split(/(\s+)/).forEach((tok) => {
@@ -68,9 +70,33 @@ export function initHeroPlay() {
           frag.appendChild(w);
         });
         n.parentNode!.replaceChild(frag, n);
+      } else if (n.nodeType === 1 && (n as HTMLElement).classList.contains('accent')) {
+        lineWord(n as HTMLElement, 'code');
       } else if (n.nodeType === 1) walk(n);
     });
   };
+  function lineWord(el: HTMLElement, kind: string) {
+    const text = el.textContent!.trim();
+    el.textContent = '';
+    const w = document.createElement('span');
+    w.className = 'hp-w hp-line';
+    w.setAttribute('aria-hidden', 'true');
+    w.dataset.kind = kind;
+    const chars: Ch[] = [];
+    [...text].forEach((c) => {
+      const s = document.createElement('span');
+      s.className = 'hp-c';
+      s.textContent = c === ' ' ? '\u00a0' : c;
+      w.appendChild(s);
+      chars.push({ el: s, ch: s.textContent!, cx: 0, cy: 0, w: 0, vx: 0, x: 0, y: 0, r: 0 });
+    });
+    words.push({ el: w, kind, chars, box: new DOMRect(), u: 0.5, active: false, t0: 0 });
+    el.appendChild(w);
+  }
+  // the "for SaaS," line reacts as one element
+  h1.querySelectorAll<HTMLElement>('.line > span').forEach((ls) => {
+    if (/saas/i.test(ls.textContent || '') && !ls.querySelector('.accent')) lineWord(ls, 'saas');
+  });
   walk(h1);
   h1.prepend(sr);
   h1.classList.add('hp-on');
@@ -95,6 +121,12 @@ export function initHeroPlay() {
   spark.innerHTML = '<path fill="none" stroke="#3ECF8E" stroke-width="2" stroke-linecap="round"/>';
   h1.appendChild(spark);
   const snip = mk('hp-snip');
+  const chart = mk('hp-chart');
+  let bars: HTMLElement[] = [];
+  const trend = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  trend.setAttribute('class', 'hp-trend');
+  trend.innerHTML = '<path fill="none" stroke="#3ECF8E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle r="5" fill="#3ECF8E"/>';
+  h1.appendChild(trend);
 
   // ---------- measure (reads only here) ----------
   let hb = h1.getBoundingClientRect();
@@ -142,19 +174,25 @@ export function initHeroPlay() {
       sel.querySelector<HTMLElement>('.hp-sel-l')!.textContent = `design · ${Math.round(w.box.height * 0.82)}px`;
       sel.classList.add('on');
     }
-    if (w.kind === 'saas') { tip.classList.add('on'); spark.classList.add('on'); }
+    if (w.kind === 'saas') {
+      tip.classList.add('on'); chart.classList.add('on'); trend.classList.add('on');
+      chart.innerHTML = '';
+      bars = w.chars.map((c) => { const b = document.createElement('i'); if (!c.ch.trim() || c.ch === ',') b.style.visibility = 'hidden'; chart.appendChild(b); return b; });
+      Object.assign(chart.style, { left: L + 'px', top: T + w.box.height * 0.86 + 'px', width: w.box.width + 'px' });
+      w.chars.forEach((c, i) => { Object.assign(bars[i].style, { left: c.cx - L - c.w * 0.32 + 'px', width: c.w * 0.64 + 'px' }); });
+    }
     if (w.kind === 'code') codeIn(w);
   }
   function leave(w: Word) {
     w.chars.forEach((c) => { c.el.style.fontFamily = ''; c.el.style.fontWeight = ''; c.el.style.fontStyle = ''; c.el.style.color = ''; c.el.style.webkitTextStroke = ''; c.el.textContent = c.ch; c.el.classList.remove('hp-ghost'); });
     if (w.kind === 'design') sel.classList.remove('on');
-    if (w.kind === 'saas') { tip.classList.remove('on'); spark.classList.remove('on'); }
+    if (w.kind === 'saas') { tip.classList.remove('on'); chart.classList.remove('on'); trend.classList.remove('on'); }
     if (w.kind === 'code') codeOut(w);
   }
 
   // code: scramble into a snippet, language by cursor zone
   let codeLang = -1, scrambleT = 0;
-  function codeIn(w: Word) { codeLang = -1; snip.classList.add('on'); w.chars.forEach((c) => c.el.classList.add('hp-ghost')); }
+  function codeIn(w: Word) { codeLang = -1; snip.classList.add('on'); }
   function codeOut(w: Word) { codeLang = -1; snip.classList.remove('on'); snip.innerHTML = ''; w.chars.forEach((c) => c.el.classList.remove('hp-ghost')); }
   function renderSnippet(w: Word, t: number) {
     const zone = Math.min(SNIPPETS.length - 1, Math.floor(w.u * SNIPPETS.length));
@@ -175,7 +213,7 @@ export function initHeroPlay() {
     html += '</code>';
     snip.innerHTML = html;
     const L = w.box.left - hb.left, T = w.box.top - hb.top;
-    const size = Math.min(w.box.height * 0.36, (w.box.width * 1.45) / (full.length * 0.6));
+    const size = Math.min(w.box.height * 0.42, (w.box.width * 0.98) / (full.length * 0.6));
     Object.assign(snip.style, { left: L + 'px', top: T + w.box.height * 0.5 + 'px', fontSize: size + 'px' });
     if (k < 1 && Math.random() < 0.5) emit(L + w.box.width * Math.random(), T + w.box.height * 0.5, ACC, 1);
   }
@@ -224,11 +262,16 @@ export function initHeroPlay() {
           }
           case 'for': { sy = 1 - near * 0.35; sx = 1 + near * 0.2; ty = near * em * 0.12; break; }
           case 'saas': {
-            // letters ride on bars (bar chart), values from cursor position
-            const h = w.active ? near * em * (0.22 + 0.18 * Math.sin(i * 1.7 + t / 500)) : 0;
-            c.r += (h - c.r) * 0.18 * dt;
+            // growth chart: the cursor is time. Letters left of it rise on bars along a growth curve.
+            const L0 = w.box.left - hb.left;
+            const pos = (c.cx - L0) / w.box.width;          // 0..1 along the line
+            const past = w.active && pos <= w.u + 0.02;
+            const h = past && c.ch.trim() && c.ch !== ',' ? em * (0.05 + 0.3 * Math.pow(pos, 1.6)) : 0;
+            c.r += (h - c.r) * 0.16 * dt;
             ty = -c.r;
-            if (w.active && near > 0.5 && Math.random() < 0.12) emit(c.cx, c.cy - c.r - em * 0.35, OK, 1);
+            c.el.style.color = c.r > 2 ? (pos > w.u - 0.12 ? '#3ECF8E' : '') : '';
+            if (bars[i]) bars[i].style.transform = `scaleY(${(c.r / (em * 0.5)).toFixed(3)})`;
+            if (w.active && Math.abs(pos - w.u) < 0.06 && c.r > 4 && Math.random() < 0.2) emit(c.cx, c.cy - c.r - em * 0.38, OK, 1);
             break;
           }
           case 'built': {
@@ -239,18 +282,36 @@ export function initHeroPlay() {
             ty = -near * em * 0.03;
             break;
           }
-          case 'code': { break; }
+          case 'code': {
+            // letters flicker into code glyphs from the cursor outward, then fade under the snippet
+            const k = Math.min(1, (t - w.t0) / 380);
+            const reach = k * w.box.width * 1.2;
+            const dxl = Math.abs(mx - c.cx);
+            if (w.active && dxl < reach) {
+              c.el.classList.add('hp-ghost');
+              c.el.style.fontFamily = '"JetBrains Mono", monospace';
+              c.el.textContent = c.ch.trim() && Math.random() < 0.3 ? CODE_CHARS[(Math.random() * CODE_CHARS.length) | 0] : c.ch;
+            } else if (!w.active) { c.el.classList.remove('hp-ghost'); c.el.style.fontFamily = ''; c.el.textContent = c.ch; }
+            ty = w.active ? -Math.max(0, 1 - dxl / (em * 2)) * em * 0.04 : 0;
+            break;
+          }
         }
         c.el.style.transform = tx || ty || rot || sx !== 1 || sy !== 1 ? `translate(${tx.toFixed(2)}px,${ty.toFixed(2)}px) rotate(${rot.toFixed(2)}deg) scale(${sx.toFixed(3)},${sy.toFixed(3)})` : '';
       });
-      if (w.kind === 'saas' && w.active) {
+      if (w.kind === 'saas' && (w.active || w.chars.some((c) => c.r > 0.5))) {
         const L = w.box.left - hb.left, T = w.box.top - hb.top;
-        const mrr = Math.round(8 + w.u * 34);
-        tip.innerHTML = `<b>MRR +${mrr}%</b><span>${['churn ↓', 'trial → paid', 'expansion', 'NRR 118%'][Math.min(3, Math.floor(w.u * 4))]}</span>`;
-        tip.style.left = mx + 'px'; tip.style.top = T - 10 + 'px';
-        const pts = Array.from({ length: 24 }, (_, k) => { const px = (k / 23) * w.box.width; const py = Math.sin(k * 0.6 + t / 300) * 4 - (k / 23) * w.u * 14; return `${k ? 'L' : 'M'}${px.toFixed(1)},${(py + 18).toFixed(1)}`; }).join(' ');
-        spark.querySelector('path')!.setAttribute('d', pts);
-        Object.assign(spark.style, { left: L + 'px', top: T + w.box.height * 0.96 + 'px', width: w.box.width + 'px' });
+        const mrr = 12 + Math.round(Math.pow(w.u, 1.6) * 36);
+        const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Math.min(11, Math.floor(w.u * 12))];
+        tip.innerHTML = `<span>${month} · MRR</span><b>$${mrr}k ↑</b>`;
+        const pts = w.chars.filter((c) => c.ch.trim() && c.ch !== ',' && c.r > 1);
+        const top = (c: Ch) => c.cy - c.r - em * (/[A-Z]/.test(c.ch) ? 0.36 : 0.24) - 8;
+        const lastP = pts[pts.length - 1];
+        tip.style.left = (lastP ? lastP.cx : mx) + 'px';
+        tip.style.top = (lastP ? top(lastP) - 14 : T) + 'px';
+        if (pts.length) {
+          trend.querySelector('path')!.setAttribute('d', pts.map((c, k) => `${k ? 'L' : 'M'}${c.cx.toFixed(1)},${top(c).toFixed(1)}`).join(' '));
+          const cc = trend.querySelector('circle')!; cc.setAttribute('cx', lastP.cx.toFixed(1)); cc.setAttribute('cy', top(lastP).toFixed(1));
+        } else trend.querySelector('path')!.setAttribute('d', '');
       }
       if (w.kind === 'code' && w.active) renderSnippet(w, t);
     }
