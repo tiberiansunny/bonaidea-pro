@@ -10,9 +10,9 @@ npm run dev      # http://localhost:4321
 npm run build    # → dist/
 ```
 
-## Deploy (Cloudflare Pages)
-- Framework preset: Astro · Build command: `npm run build` · Output: `dist` · Env: `NODE_VERSION=22`
-- Custom domain: `www.bonaidea.pro`; apex `bonaidea.pro` → 301 to www.
+## Deploy (Cloudflare)
+- Hosting: Cloudflare Workers static assets (`wrangler.jsonc`), custom domains www.bonaidea.pro + bonaidea.pro (301 → www via redirect rule).
+- Deploy: `npm run deploy` (needs CLOUDFLARE_API_TOKEN). Analytics: Cloudflare Web Analytics (cookieless).
 
 ## Content
 - Cases: `src/data/works.ts`; videos to `public/media/` (H.264 MP4, ≤10 MB each, plus poster).
